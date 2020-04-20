@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+        <title>Hugues Audoux</title>
+    </head>
+    <body>
+        <div class='container'>
+            <div class='row'>
+                <div class='col'>
+                    <center>
+                        <h1>
+                            Qualité de l'air à la station Châtelet - Les Halles.
+                        </h1>
+                    </center>
+                </div>
+            </div>
+            </br>
+            <div class='row'>
+                <div class='col'>
+                    <input type='checkbox' value='nocha4' id='nocha4'>
+                    <label for='nocha4'>
+                        Monoxyde d'azote (No)
+                    </label>
+                    <input type='checkbox' value='n2cha4' id='n2cha4'>
+                    <label for='n2cha4'>
+                        Diazote (N2)
+                    </label>
+                    <input type='checkbox' value='10cha4' id='PM10'>
+                    <label for='PM10'>
+                        Particule en suspension (PM10)
+                    </label>
+                    <input type='checkbox' value='c2cha4' id='c2cha4'>
+                    <label for='c2cha4'>
+                        Dioxyde de carbon (Co2)
+                    </label>
+                    <input type='checkbox' value='tcha4' id='tcha4'>
+                    <label for='tcha4'>
+                        Temperature (Celsius)
+                    </label>
+                    <input type='checkbox' value='hycha4' id='hycha4'>
+                    <label for='hycha4'>
+                        Humidite (%)
+                    </label>
+                </div>
+            </div>
+            </br>
+            <div class='row'>
+                <div class='col'>
+                    <center>
+                        <input type="date" id="date" name="date" value="2020-01-01">
+                    </center>
+                </div>
+            </div>
+            </br>
+            <div class='row'>
+                <div class='col'>
+                    <center>
+                        <p>
+                            Dans le cas ou la courbe, ne s'affiche pas, les données sont manquantes pour cette période.
+                        </p>
+                    </center>
+                </div>
+            </div>
+            </br>
+            <div class='row'>
+                <div class='col'>
+                    <canvas id="myChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+<script>
+    chart = createChart()
+    var data = {nocha4:[],n2cha4:[],c2cha4:[],PM10:[],tcha4:[],hycha4:[]};
+    $("input[type='checkbox']").change(function(){
+        //Efface le tableau
+        for(let key in data){
+            if(typeof(data[key][0]) !== 'undefined'){
+                size = data[key][0].length
+                for(iterations = 0; iterations < size; iterations++){
+                    chart.data.labels.pop();
+                    chart.data.datasets.forEach((dataset) => {
+                        dataset.data.pop();
+                    });
+                }
+                chart.update()
+            }
+        }
+        data.nocha4 = []
+        data.n2cha4 = []
+        data.c2cha4 = []
+        data.PM10   = []
+        data.tcha4  = []
+        data.hycha4 = []
+        dateDebut = document.getElementById('date').value + ' 00:00:00'
+        dateFin = document.getElementById('date').value + ' 23:59:59'
+        
+        //Mise a jour du tableau
+        iterations = 0
+        for(let key in data){
+            if (document.getElementById(key).checked){
+                getDataToWrite(key,dateDebut,dateFin)
+                chart.data.labels = data[key][0]
+                chart.data.datasets[iterations].data = data[key][1]
+            }
+            iterations++
+        }
+        chart.update();
+        
+    });
+
+    function getDataToWrite(molecule, dateDebut, dateFin){
+        valeurRecherche = document.getElementById(molecule).value
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                var jsonData = JSON.parse(this.responseText)
+                data[molecule][0] = Object.keys(jsonData)
+                data[molecule][1] = []
+                for(i = 0; i < data[molecule][0].length; i++){
+                        data[molecule][1].push(jsonData[data[valeurRecherche][0][i]])                    
+                }
+            }
+        };
+        url = "/chatelet/" + molecule + '/' + dateDebut + '/' + dateFin
+        xhttp.open("GET",url,false)
+        xhttp.send()
+    }
+    function createChart(){
+        var ctx = document.getElementById('myChart').getContext('2d');
+        var myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'µg.m-3',
+                        data: [],
+                        backgroundColor: [
+                            'rgba(0, 255, 0, 0)'
+                        ],
+                        borderColor: [
+                            'rgba(0, 255, 0, 1)'
+                        ],
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'µg.m-3',
+                        data: [],
+                        backgroundColor: [
+                            'rgba(255, 0, 0, 0)'
+                        ],
+                        borderColor: [
+                            'rgba(255, 0, 0, 1)'
+                        ],
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'µg.m-3',
+                        data: [],
+                        backgroundColor: [
+                            'rgba(0, 0, 255, 0)'
+                        ],
+                        borderColor: [
+                            'rgba(0, 0, 255, 1)'
+                        ],
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'µg.m-3',
+                        data: [],
+                        backgroundColor: [
+                            'rgba(0, 255, 255, 0)'
+                        ],
+                        borderColor: [
+                            'rgba(0, 255, 255, 1)'
+                        ],
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Celsius',
+                        data: [],
+                        backgroundColor: [
+                            'rgba(255, 255, 0, 0)'
+                        ],
+                        borderColor: [
+                            'rgba(255, 255, 0, 1)'
+                        ],
+                        borderWidth: 1
+                    },
+                    {
+                        label: '%',
+                        data: [],
+                        backgroundColor: [
+                            'rgba(255, 0, 255, 0)'
+                        ],
+                        borderColor: [
+                            'rgba(255, 0, 255, 1)'
+                        ],
+                        borderWidth: 1
+                    }],
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true
+                        }
+                    }]
+                }
+            }
+        });
+        return myChart
+    }
+</script>
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    </body>
+</html>
